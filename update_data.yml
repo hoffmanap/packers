@@ -1,0 +1,41 @@
+name: Update Packers NGS Data
+
+on:
+  schedule:
+    # Every Tuesday at 13:00 UTC (8am ET) — after Monday Night Football
+    # has finished and nflverse's own pipeline has had time to refresh.
+    - cron: "0 13 * * 2"
+  workflow_dispatch: {}   # allows manual "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Pull latest NGS data
+        run: python scripts/pull_ngs.py
+
+      - name: Commit and push if data changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/
+          if git diff --cached --quiet; then
+            echo "No data changes this week."
+          else
+            git commit -m "Weekly NGS data refresh: $(date -u +'%Y-%m-%d')"
+            git push
+          fi
