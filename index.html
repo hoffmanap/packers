@@ -84,7 +84,8 @@
 
   .ghost{position:absolute;width:9px;height:9px;border-radius:50%;background:rgba(241,237,225,.28);transform:translate(-50%,-50%);z-index:2;}
 
-  .pixel-ball{position:absolute;left:0;top:52%;width:30px;height:20px;z-index:4;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
+  .pixel-ball-wrap{position:absolute;left:0;top:52%;width:30px;height:20px;z-index:4;}
+  .pixel-ball{display:block;width:100%;height:100%;filter:drop-shadow(0 2px 3px rgba(0,0,0,.6));}
   .replay-btn{
     font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:600;
     background:var(--pack-gold); color:var(--pack-green); border:none; border-radius:5px;
@@ -265,7 +266,7 @@ function ghostFormation(startYards){
 }
 
 function renderPlay(play){
-  field.querySelectorAll('.marker,.ghost,.pixel-ball').forEach(n=>n.remove());
+  field.querySelectorAll('.marker,.ghost,.pixel-ball-wrap').forEach(n=>n.remove());
   drawYardLines();
 
   const startYards = 100 - play.yardline_100;
@@ -284,6 +285,8 @@ function renderPlay(play){
     field.appendChild(dot);
   });
 
+  const ballWrap=document.createElement('div');
+  ballWrap.className='pixel-ball-wrap';
   const ball=document.createElementNS('http://www.w3.org/2000/svg','svg');
   ball.setAttribute('viewBox','0 0 20 13'); ball.setAttribute('class','pixel-ball');
   ball.innerHTML = `
@@ -296,7 +299,8 @@ function renderPlay(play){
     <rect x="11" y="4" width="2" height="1" fill="#fff"/>
     <rect x="7" y="8" width="2" height="1" fill="#fff"/>
     <rect x="11" y="8" width="2" height="1" fill="#fff"/>`;
-  field.appendChild(ball);
+  ballWrap.appendChild(ball);
+  field.appendChild(ballWrap);
 
   const seen = new Set();
   const roleCounts = {}; // multiple players can share a role (split sacks,
@@ -334,15 +338,21 @@ function renderPlay(play){
   // mobile context (the ball would sometimes just stay frozen at its start
   // position). fill:'forwards' guarantees it visually lands on endPx
   // regardless of whether the animation itself renders smoothly.
-  ball.style.transform = `translate(${startPx}px, -50%)`;
+  ballWrap.style.transform = `translate(${startPx}px, -50%)`;
   // Defer the actual animate() call to its own clean animation frame,
   // decoupled from the burst of other DOM work renderPlay just did
   // (clearing/rebuilding markers, yard lines, images). Competing with all
   // of that in the same synchronous tick turned out to be exactly the
   // difference between this working and silently snapping to the end state.
+  //
+  // Animating a plain wrapper <div> here (not the <svg> itself, which has
+  // a `filter: drop-shadow` applied) — animating `transform` on an element
+  // that simultaneously has an active filter is a known source of
+  // compositor/GPU quirks on some browser+driver combinations. The filter
+  // now lives on a static, non-animated child instead.
   requestAnimationFrame(() => {
-    if (ball.animate) {
-      ball.animate(
+    if (ballWrap.animate) {
+      ballWrap.animate(
         [
           { transform: `translate(${startPx}px, -50%)` },
           { transform: `translate(${endPx}px, -50%)` },
@@ -351,7 +361,7 @@ function renderPlay(play){
       );
     } else {
       // very old browsers with no Web Animations API support at all
-      ball.style.transform = `translate(${endPx}px, -50%)`;
+      ballWrap.style.transform = `translate(${endPx}px, -50%)`;
     }
   });
 
@@ -384,7 +394,7 @@ function renderPicker(plays){
     msg.className='no-plays';
     msg.textContent='No notable plays (TD/turnover/sack/20+ yard gain) surfaced this week.';
     picker.appendChild(msg);
-    field.querySelectorAll('.marker,.ghost,.pixel-ball').forEach(n=>n.remove());
+    field.querySelectorAll('.marker,.ghost,.pixel-ball-wrap').forEach(n=>n.remove());
     drawYardLines();
     situationEl.textContent='';
     return;
