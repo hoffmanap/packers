@@ -1,14 +1,15 @@
 {
   "team": "GB",
-  "last_updated_utc": "2026-10-20T17:53:25.474815+00:00",
+  "last_updated_utc": "2026-10-27T18:38:50.559711+00:00",
   "stat_types": {
     "passing": {
-      "row_count": 172,
+      "row_count": 192,
       "seasons": [
         2016,
         2017,
         2018,
         2019,
+        2020,
         2021,
         2022,
         2023,
@@ -19,7 +20,7 @@
       "file": "ngs_passing.json"
     },
     "rushing": {
-      "row_count": 206,
+      "row_count": 207,
       "seasons": [
         2016,
         2017,
@@ -36,7 +37,7 @@
       "file": "ngs_rushing.json"
     },
     "receiving": {
-      "row_count": 472,
+      "row_count": 475,
       "seasons": [
         2016,
         2017,
